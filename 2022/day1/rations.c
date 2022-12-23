@@ -3,7 +3,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include "dynarray.h"
+#include <adt/dynarray.h>
 
 
 array* read_elves (FILE* in)
@@ -53,12 +53,11 @@ array* shit_sort (array* elves)
                 break;
             }
         }
-        if (c == 1)
-            continue;
         // either:
         //    smallest element, or
         //    no elements yet
-        da_insert (top_elves, top_elves->size, elves->arr[i]);
+        if (! c)
+            da_insert (top_elves, top_elves->size, elves->arr[i]);
     }
 
     da_destroy (&elves);
