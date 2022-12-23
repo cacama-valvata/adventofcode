@@ -1,4 +1,4 @@
 all: day1
 
-day1: rations.c
-	gcc -g rations.c -ldynarray
+day1: day1.c
+	gcc -g day1.c -ldynarray
