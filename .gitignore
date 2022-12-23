@@ -1,13 +1,5 @@
-# Ignore all
-*
-
-# Unignore all with extensions
-!*.*
-
-# Unignore all dirs
-!*/
-
-# #################
+# executable
+a.out
 
 # input files
 *.in
