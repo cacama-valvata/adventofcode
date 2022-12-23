@@ -1,106 +1,103 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
-int partA (FILE* in)
+#include "dynarray.h"
+
+
+array* read_elves (FILE* in)
+{
+    array* elves = da_create (100);
+
+    char* linebuf = calloc (256, sizeof (char));
+    int current_elf_total = 0;
+
+    while (fgets (linebuf, 256, in) != NULL)
+    {
+        // end of that elf's rations
+        if ( !strcmp (linebuf, "\n") )
+        {
+            da_insert (elves, elves->size, current_elf_total);
+            if (errno != 0)
+                printf ("treacherous: %s\n", strerror (errno));
+            current_elf_total = 0;
+        }
+        // more to count
+        else 
+        {
+            linebuf[ strcspn (linebuf, "\n") ] = '\0';
+            current_elf_total += atoi (linebuf);
+        }
+    }
+
+    free (linebuf);
+    fclose (in);
+
+    return elves;
+}
+
+array* shit_sort (array* elves)
+{
+    array* top_elves = da_create (elves->size);
+
+    for (int i = 0; i < elves->size; i++)
+    {
+        int c = 0;
+        for (int j = 0; j < top_elves->size; j++)
+        {
+            if (elves->arr[i] > top_elves->arr[j])
+            {
+                da_insert (top_elves, j, elves->arr[i]);
+                c = 1;
+                break;
+            }
+        }
+        if (c == 1)
+            continue;
+        // either:
+        //    smallest element, or
+        //    no elements yet
+        da_insert (top_elves, top_elves->size, elves->arr[i]);
+    }
+
+    da_destroy (&elves);
+
+    return top_elves;
+}
+
+int sum_first_n (array* elves, int n)
 {
     int result = 0;
 
-    char* linebuf = malloc (256 * sizeof (char));
-    int cur = 0;
-    while (fgets (linebuf, 256, in) != NULL)    // until EOF
+    if (n > elves->size)
+        n = elves->size;
+
+    for (int i = 0; i < n; i++)
     {
-        // end of that elf's rations
-        if (!strcmp (linebuf, "\n"))
-        {
-            if (cur > result)
-                result = cur;
-
-            cur = 0;
-        }
-        // more to count
-        else
-        {
-            linebuf [ strcspn (linebuf, "\n") ] = '\0';
-            cur += atoi (linebuf);
-        }
+        result += elves->arr[i];
     }
-
-    free(linebuf);
-    fclose (in);
 
     return result;
-}
-
-int partB (FILE* in)
-{
-    int result [] = {0, 0, 0};
-
-    char* linebuf = malloc (256 * sizeof (char));
-    int cur = 0;
-    while (fgets (linebuf, 256, in) != NULL)    // until EOF
-    {
-        // end of that elf's rations
-        if (!strcmp (linebuf, "\n"))
-        {
-            // find lowest and replace it
-            int res = 0;
-            int i;
-            for (i = 1; i < 3; i++)
-            {
-                if (result [i] < result [res])
-                    res = i;
-            }
-            if (cur > result [res])
-                result [res] = cur;
-
-            cur = 0;
-        }
-        // more to count
-        else
-        {
-            linebuf [ strcspn (linebuf, "\n") ] = '\0';
-            cur += atoi (linebuf);
-        }
-    }
-
-    free(linebuf);
-    fclose (in);
-
-    int sum = 0;
-    int i;
-    for (i = 0; i < 3; i++)
-    {
-        sum += result [i];
-    }
-
-    return sum;
 }
 
 
 int main (int argc, char* argv[])
 {
-    if (argc < 2)
-    {
-        printf ("Specify input file.\n");
-        return 1;
-    }
+    char* infile = "day1.in";
 
-    FILE* in = fopen (argv[1], "r");
+    FILE* in = fopen (infile, "r");
     if (!in)
     {
-        printf ("Error opening file %s\n", argv[1]);
+        printf ("Error opening file %s\n", infile);
         return 1;
     }
 
-    printf ("PART A: %d calories\n", partA (in));
+    array* elves = read_elves (in);
+    elves = shit_sort (elves);
 
-    in = fopen (argv[1], "r");
-    if (!in)
-    {
-        printf ("Error opening file %s\n", argv[1]);
-        return 1;
-    }
+    printf ("PART A: %d calories\n", sum_first_n (elves, 1) );
+    printf ("PART B: %d calories\n", sum_first_n (elves, 3) );
 
-    printf ("PART B: %d calories\n", partB (in));
+    da_destroy (&elves);
 }
